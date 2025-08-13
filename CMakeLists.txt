@@ -568,6 +568,10 @@ endif()
 
 if(EXECUTORCH_BUILD_CADENCE)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/backends/cadence)
+  set(CMAKE_CXX_FLAGS_RELEASE
+    "-O3 -mcoproc -mlongcalls -LNO:simd -flto -ffunction-sections -fsigned-char -fno-exceptions -INLINE:requested -fno-zero-initialized-in-bss -mtext-section-literals -fmessage-length=0")
+  set(CMAKE_C_FLAGS_RELEASE
+    "-O3 -mcoproc -mlongcalls -LNO:simd -flto -ffunction-sections -fsigned-char -fno-exceptions -INLINE:requested -fno-zero-initialized-in-bss -mtext-section-literals -fmessage-length=0")
 endif()
 
 if(EXECUTORCH_BUILD_NXP_NEUTRON)

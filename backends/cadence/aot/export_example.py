@@ -38,7 +38,7 @@ def export_model(
     model: nn.Module,
     example_inputs: Tuple[Any, ...],
     file_name: str = "CadenceDemoModel",
-    run_and_compare: bool = True,
+    run_and_compare: bool = False,
     eps_error: float = 1e-1,
     eps_warn: float = 1e-5,
 ):

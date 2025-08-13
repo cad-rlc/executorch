@@ -16,6 +16,8 @@
 #include <executorch/runtime/executor/method_meta.h>
 #include <executorch/runtime/platform/log.h>
 
+#define RANDOM 1
+
 using executorch::aten::Tensor;
 using executorch::aten::TensorImpl;
 using executorch::runtime::Error;
@@ -30,7 +32,19 @@ namespace {
 /**
  * Sets all elements of a tensor to 1.
  */
+#if RANDOM
+float random()
+{
+    return (float)std::rand()/RAND_MAX;
+}
+#endif
 Error fill_ones(torch::executor::Tensor tensor) {
+#if RANDOM
+#define FILL_CASE(T, n)                                \
+  case (torch::executor::ScalarType::n):               \
+    std::generate(tensor.mutable_data_ptr<T>(),tensor.mutable_data_ptr<T>() + tensor.numel(), random); \
+    break;
+#else
 #define FILL_CASE(T, n)                                \
   case (torch::executor::ScalarType::n):               \
     std::fill(                                         \
@@ -38,6 +52,7 @@ Error fill_ones(torch::executor::Tensor tensor) {
         tensor.mutable_data_ptr<T>() + tensor.numel(), \
         T(1));                                         \
     break;
+#endif
 
   switch (tensor.scalar_type()) {
     ET_FORALL_REALHBBF16_TYPES(FILL_CASE)
