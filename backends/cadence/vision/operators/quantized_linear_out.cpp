@@ -127,6 +127,11 @@ void quantized_linear_per_tensor_out(
       // Allocate buffers
       int8_t* input_cache = (int8_t*)ptr_dram0;
       int8_t* weight_tile = (int8_t*)ptr_dram1;
+
+      // Writeback input and weight from cache to system memory before DMA reads
+      xthal_dcache_region_writeback((void*)in_data, sizeof(int8_t) * src.numel());
+      xthal_dcache_region_writeback((void*)weight_data, sizeof(int8_t) * weight.numel());
+
       // Initialize DMA Channel 0
       dma_2dm_init(0);
       // Load input row ONCE and cache it
@@ -162,9 +167,13 @@ void quantized_linear_per_tensor_out(
     }
     
     // Fallback: No DMA or multi-sample - use direct SIMD
-    // Invalidate input cache: previous op may have written via DMA, CPU must not see stale cache
+    // Writeback+invalidate inputs: ensures CPU-dirty data reaches system memory,
+    // then invalidate forces re-read from system memory (fresh data)
+    xthal_dcache_region_writeback((void*)in_data, sizeof(int8_t) * src.numel());
     xthal_dcache_region_invalidate((void*)in_data, sizeof(int8_t) * src.numel());
+    xthal_dcache_region_writeback((void*)weight_data, sizeof(int8_t) * weight.numel());
     xthal_dcache_region_invalidate((void*)weight_data, sizeof(int8_t) * weight.numel());
+    xthal_dcache_region_writeback((void*)bias_data, sizeof(int32_t) * bias.numel());
     xthal_dcache_region_invalidate((void*)bias_data, sizeof(int32_t) * bias.numel());
     for (size_t i = 0; i < leading_dims; ++i) {
       const int8_t* in_row = &in_data[i * in_dim];

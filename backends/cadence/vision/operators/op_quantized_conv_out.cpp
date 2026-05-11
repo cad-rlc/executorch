@@ -512,6 +512,14 @@ void quantized_conv_nchw(
             reinterpret_cast<int8_t*>(kernel_bias),
             oc * sizeof(int32_t));
 
+        // Writeback input and weight from cache to system memory before DMA reads
+        xthal_dcache_region_writeback(
+            const_cast<int8_t*>(input.const_data_ptr<int8_t>()),
+            n * c * h * w * sizeof(int8_t));
+        xthal_dcache_region_writeback(
+            const_cast<int8_t*>(weight.const_data_ptr<int8_t>()),
+            weight.numel() * sizeof(int8_t));
+
         XAI_ERR_TYPE kern_status = conv_execute_kernel(
             const_cast<int8_t*>(input.const_data_ptr<int8_t>()),
             out.mutable_data_ptr<int8_t>(),
@@ -527,10 +535,12 @@ void quantized_conv_nchw(
             n * oc * oh * ow * sizeof(int8_t));
 
         // Apply post-kernel residual correction
+        bool has_correction = false;
         for (int _n = 0; _n < n; _n++) {
           for (int _oc = 0; _oc < oc; _oc++) {
             int32_t corr = post_correction[_oc];
             if (corr == 0) continue;
+            has_correction = true;
             int8_t* ch_out = out.mutable_data_ptr<int8_t>() + (_n * oc * oh * ow + _oc * oh * ow);
             for (int _s = 0; _s < oh * ow; _s++) {
               int32_t val = static_cast<int32_t>(ch_out[_s]) + corr;
@@ -538,6 +548,13 @@ void quantized_conv_nchw(
               ch_out[_s] = static_cast<int8_t>(val);
             }
           }
+        }
+
+        // If post_correction modified output via CPU/cache, writeback to system memory
+        if (has_correction) {
+          xthal_dcache_region_writeback(
+              out.mutable_data_ptr<int8_t>(),
+              n * oc * oh * ow * sizeof(int8_t));
         }
 
         break;

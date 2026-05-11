@@ -110,8 +110,8 @@ Tensor& mean_out(
     bool use_dma = dram0_available && dram1_available;
     
     if (use_dma) {
-      // Invalidate input cache: previous op may have written via DMA
-      xthal_dcache_region_invalidate((void*)input_data, sizeof(float) * in.numel());
+      // Writeback input from cache to system memory before DMA reads
+      xthal_dcache_region_writeback((void*)input_data, sizeof(float) * in.numel());
 
       // Process each batch independently through the DMA executor
       for (int b = 0; b < batch_size; b++) {
@@ -137,7 +137,9 @@ Tensor& mean_out(
     }
     
     // Fallback: Direct SIMD without DMA (data fits or no DRAM)
-    // Invalidate input cache: previous op may have written via DMA, CPU must not see stale cache
+    // Writeback+invalidate input: ensures CPU-dirty data reaches system memory,
+    // then invalidate forces re-read from system memory (fresh data)
+    xthal_dcache_region_writeback((void*)input_data, sizeof(float) * in.numel());
     xthal_dcache_region_invalidate((void*)input_data, sizeof(float) * in.numel());
     simd_mean_pool_2x2_to_1x1_float32(out_data, input_data, total_channels * 4);
     xthal_dcache_region_writeback(out_data, sizeof(float) * out.numel());

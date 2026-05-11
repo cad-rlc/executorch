@@ -96,8 +96,9 @@ std::tuple<Tensor&, Tensor&> max_pool2d_with_indices_out(
     uint8_t kernel_height = kernel_size[0];
     uint8_t kernel_width = kernel_size[1];
 
-    // Invalidate input cache: previous op may have written via DMA
-    xthal_dcache_region_invalidate((void*)ptr_inp, sizeof(float) * in.numel());
+    // Writeback input from cache to system memory: previous op may have written
+    // via CPU/cache, and maxpool's DMA kernel reads from system memory.
+    xthal_dcache_region_writeback((void*)ptr_inp, sizeof(float) * in.numel());
 
     // Look up pre-computed config for this layer
     const maxpool_layer_config_t* mp_cfg = get_maxpool_config_by_params(

@@ -147,6 +147,10 @@ Tensor& add_out(
     }
 
     if (ping_pong_process || ping_process_pong) {
+      // Writeback inputs from cache to system memory before DMA reads
+      xthal_dcache_region_writeback((void*)a_data, FLT32_SIZE * numel);
+      xthal_dcache_region_writeback((void*)b_data, FLT32_SIZE * numel);
+
       /* Initialize DMA Channel 0 (loads) and Channel 1 (stores) */
       dma_2dm_init(0);
       dma_2dm_init(1);
@@ -207,6 +211,9 @@ Tensor& add_out(
         idma_hw_wait_all(1);
         dma_1dm(1, out_buff[pp_swap], (void*)ptr_out, FLT32_SIZE * current_chunk);
         idma_hw_wait_all(1);
+
+        // Invalidate output cache: DMA wrote to system memory, cache may have stale data
+        xthal_dcache_region_invalidate(out_data, FLT32_SIZE * numel);
         
         TIME_END(add_float);
         TIME_DISPLAY(add_float, numel, "elements (DMA ping-pong)");
@@ -241,14 +248,20 @@ Tensor& add_out(
           remaining -= current_chunk;
         }
         idma_hw_wait_all(1);
+
+        // Invalidate output cache: DMA wrote to system memory, cache may have stale data
+        xthal_dcache_region_invalidate(out_data, FLT32_SIZE * numel);
         
         TIME_END(add_float);
         TIME_DISPLAY(add_float, numel, "elements (DMA ping-process-pong)");
       }
     } else {
       // Fallback: use hardware-optimized vector addition directly without DMA
-      // Invalidate input cache: previous ops wrote via DMA, CPU must not see stale cache
+      // Writeback+invalidate inputs: ensures CPU-dirty data reaches system memory,
+      // then invalidate forces re-read from system memory (fresh data)
+      xthal_dcache_region_writeback((void*)a_data, FLT32_SIZE * numel);
       xthal_dcache_region_invalidate((void*)a_data, FLT32_SIZE * numel);
+      xthal_dcache_region_writeback((void*)b_data, FLT32_SIZE * numel);
       xthal_dcache_region_invalidate((void*)b_data, FLT32_SIZE * numel);
       rvaddf(out_data, a_data, b_data, (int)numel);
 

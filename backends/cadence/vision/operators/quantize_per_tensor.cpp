@@ -111,6 +111,9 @@ Tensor& quantize_per_tensor_out(
     if (ping_pong_process || ping_process_pong) {
       const float32_t* ptr_inp = (float32_t*)input_data;
 
+      // Writeback input from cache to system memory before DMA reads
+      xthal_dcache_region_writeback((void*)input_data, FLT32_SIZE * numel);
+
       /* Initialize DMA Channel 0 (loads) and Channel 1 (stores) */
       dma_2dm_init(0);
       dma_2dm_init(1);
@@ -167,6 +170,9 @@ Tensor& quantize_per_tensor_out(
         idma_hw_wait_all(1);
         dma_1dm(1, out_buff[pp_swap], ptr_out, sizeof(int8_t) * current_chunk);
         idma_hw_wait_all(1);
+
+        // Invalidate output cache: DMA wrote to system memory, cache may have stale data
+        xthal_dcache_region_invalidate(out_data, sizeof(int8_t) * numel);
         
         TIME_END(quantize_asym8s);
         TIME_DISPLAY(quantize_asym8s, numel, "elements (DMA ping-pong)");
@@ -198,6 +204,9 @@ Tensor& quantize_per_tensor_out(
           remaining -= current_chunk;
         }
         idma_hw_wait_all(1);
+
+        // Invalidate output cache: DMA wrote to system memory, cache may have stale data
+        xthal_dcache_region_invalidate(out_data, sizeof(int8_t) * numel);
         
         TIME_END(quantize_asym8s);
         TIME_DISPLAY(quantize_asym8s, numel, "elements (DMA ping-process-pong)");
@@ -206,7 +215,9 @@ Tensor& quantize_per_tensor_out(
       // TIME_END and TIME_DISPLAY now called inside each branch
     } else {
       // No DMA: use hardware function on full tensor at once
-      // Invalidate input cache: previous op wrote via DMA, CPU must not see stale cache
+      // Writeback+invalidate input: ensures CPU-dirty data reaches system memory,
+      // then invalidate forces re-read from system memory (fresh data)
+      xthal_dcache_region_writeback((void*)input_data, FLT32_SIZE * numel);
       xthal_dcache_region_invalidate((void*)input_data, FLT32_SIZE * numel);
       quantize_f32_asym8s(out_data, input_data, (float)scale, (int)zero_point, (int)numel);
 
