@@ -7,9 +7,6 @@
  */
 #include <c10/util/irange.h>
 
-#if __has_include(<lib.h>)
-#include <lib.h>
-#endif
 #include <executorch/kernels/portable/cpu/util/kernel_ops_util.h>
 #include <executorch/kernels/portable/cpu/util/reduce_util.h>
 #include <executorch/runtime/kernel/kernel_includes.h>
@@ -30,10 +27,6 @@ Tensor& mean_dim_out(
     optional<ScalarType> dtype,
     Tensor& out) {
   (void)ctx;
-#ifdef TIME_DECL
-  TIME_DECL(mean);
-  TIME_START(mean);
-#endif
 
   ET_KERNEL_CHECK(
       ctx,
@@ -108,11 +101,6 @@ Tensor& mean_dim_out(
       ET_KERNEL_CHECK_MSG(ctx, success, Internal, , "parallel_for failed");
     });
   });
-
-#ifdef TIME_DECL
-  TIME_END(mean);
-  TIME_DISPLAY(mean, (int)out.numel(), "elements");
-#endif
 
   return out;
 }
