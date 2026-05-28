@@ -94,7 +94,7 @@ elseif(EXECUTORCH_VISION_OPT)
     ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_DIR}/third-party
     ${EXECUTORCH_ROOT}/runtime/core/portable_type/c10
   )
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_DIR}/../generic/kernels)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_DIR}/kernels)
 else()
   set(TARGET_DIR generic)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_DIR}/kernels)

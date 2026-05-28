@@ -28,8 +28,6 @@ Tensor& _softmax_out(
     bool half_to_float,
     Tensor& out) {
   
-  TIME_DECL(softmax);
-  TIME_START(softmax);
 
   (void)ctx;
 
@@ -196,8 +194,6 @@ Tensor& _softmax_out(
       dma_1dm(1, out_buff[pp_swap], ptr_out, 4 * stride);
       idma_hw_wait_all(1);
 
-      TIME_END(softmax);
-      TIME_DISPLAY(softmax, in.numel(), "floats");
 
       return out;
     } else if (ping_process_pong) {
@@ -230,8 +226,6 @@ Tensor& _softmax_out(
 	    }
       idma_hw_wait_all(1);
 
-      TIME_END(softmax);
-      TIME_DISPLAY(softmax, in.numel(), "floats");
 
       return out;
     } else {
@@ -306,8 +300,6 @@ Tensor& _softmax_out(
       // Writeback output from cache to system memory for DMA coherency
       xthal_dcache_region_writeback(out_data, sizeof(float) * in.numel());
 
-      TIME_END(softmax);
-      TIME_DISPLAY(softmax, in.numel(), "floats");
 
       return out;
     }
@@ -357,8 +349,6 @@ Tensor& _softmax_out(
             dim);
       });
 
-  TIME_END(softmax);
-  TIME_DISPLAY(softmax, in.numel(), "floats");
 
   return out;
 }

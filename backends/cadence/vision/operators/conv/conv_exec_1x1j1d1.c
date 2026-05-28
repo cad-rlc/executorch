@@ -1,21 +1,3 @@
-/*
- * conv_exec_1x1j1d1.c
- *
- *  Created on: Dec 8, 2025
- *      Author: Suraj Raut
- *
- *  Description:
- *      1x1 stride-1 convolution executor matching convIdma.c exactly.
- *      Bottleneck layers for channel reduction (e.g., 28x28x512 -> 28x28x256)
- *      
- *      Key DMA formulas for 1x1j1d1 (no edge padding):
- *      - Source offset: (stride_y * out_rows * idx) * src_dim1_size
- *      - Dest offset: 0 (IN_DATA_OFFSET = 0 for 1x1 kernels)
- *      - Rows: in_dim2_size (constant, no edge overlap)
- *      - DIM2_COORD: stride_y * out_dim2_size * idx_h = out_dim2_size * idx_h (stride=1)
- *      - DIM2: in_rows_firstdma (no edge to subtract)
- */
-
 #include "kernel_executors.h"
 #include "memory_manager.h"
 #include "dma.h"

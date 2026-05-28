@@ -1,24 +1,3 @@
-/*
- * conv_exec_3x3j1d1.c
- *
- *  Created on: Dec 8, 2025
- *      Author: Suraj Raut
- *
- *  Description:
- *      3x3 stride-1 convolution executor matching convIdma.c exactly.
- *      Standard ResNet 3x3 layers maintaining spatial dimensions.
- *      
- *      Key DMA formulas for 3x3j1d1:
- *      - Source offset: max((stride_y * out_rows * idx - edge) * src_dim1_size, 0)
- *      - Dest offset: max((-out_rows * in_dim1_pitch * idx) + data_offset, 1)
- *      - Rows: (idx < height_tiles-1) ? 
- *              min((stride_y * out_rows * idx) + (in_dim2_size - edge), 
- *                  min(-(stride_y * out_rows * idx) + (src_dim2_size + edge2), in_dim2_size))
- *              : in_dim2_size
- *      - DIM2_COORD: stride_y * out_dim2_size * idx_h
- *      - DIM2: in_rows_firstdma - edge (constant throughout loop)
- */
-
 #include "kernel_executors.h"
 #include "memory_manager.h"
 #include "dma.h"
@@ -607,7 +586,7 @@ XAI_ERR_TYPE conv_exec_3x3j1d1(
         !p_output0 || !p_output1 || !p_bias) {
         return (-1);
     }
-    
+
     // ========================================================================
     // SECTION 2: Initialize XAI Tile Descriptors
     // ========================================================================

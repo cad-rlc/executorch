@@ -1,31 +1,3 @@
-/*
- * maxpool_exec_mxnj2.c
- *
- *  Created on: Apr 21, 2026
- *      Author: Suraj Raut
- *
- *  Description:
- *      DMA-tiled maxpool executor for float32 NCHW data.
- *      Supports arbitrary kernel sizes (2x2, 3x3, …), strides, and padding.
- *
- *      Architecture mirrors conv_exec_3x3j2d1.c:
- *        - Ping-pong input/output buffers in local DRAM
- *        - 3D DMA for input prefetch (ch1), 2D DMA for output writeback (ch0)
- *        - C-tile x H-tile nested loop
- *
- *      Key difference from conv:  maxpool has NO coefficients, bias, or
- *      outscale.  Channels are independent, so C-tiling replaces N-tiling.
- *
- *      DMA tiling with overlap handling:
- *        When kernel_h > stride_h (e.g. 3x3/s2), consecutive height tiles
- *        share (kernel_h - stride_h) rows of input.  The source-row start
- *        for tile h is:  h * output_rows * stride_h - pad_h  (clamped to 0).
- *        Top/bottom padding rows are supplied by a MIN_FLT32 pre-fill so
- *        the kernel's ky loop reads through them naturally.
- *
- *      The optimized SIMD kernel maxpool2d_j2x2_f32() is called per-channel.
- */
-
 #include "maxpool_executors.h"
 #include "memory_manager.h"
 #include "dma.h"

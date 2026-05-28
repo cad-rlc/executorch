@@ -1,28 +1,3 @@
-/*
- * mean_exec_dma.c
- *
- *  Created on: Apr 22, 2026
- *      Author: Suraj Raut
- *
- *  Description:
- *      DMA-tiled mean pooling (adaptive_avg_pool2d) executor for float32.
- *
- *      Reduces [C x H x W] -> [C] by averaging all spatial elements.
- *      Currently optimized for H=2, W=2 via simd_mean_pool_2x2_to_1x1_float32.
- *
- *      Architecture mirrors maxpool_exec_mxnj2.c:
- *        - Ping-pong input/output buffers split across DRAM0 and DRAM1
- *        - Prefetch next input chunk via DMA while computing on current
- *        - Output DMA overlaps with next iteration's prefetch
- *
- *      Buffer layout (per DRAM bank):
- *        [  input chunk  |  output chunk  ]
- *        80/20 split: input = chunk_ch * spatial * 4B,
- *                     output = chunk_ch * 4B
- *
- *      Channel tile size is rounded to 16 for SIMD alignment.
- */
-
 #include "mean_executors.h"
 #include "memory_manager.h"
 #include "dma.h"

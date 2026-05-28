@@ -89,8 +89,6 @@ Tensor& mean_out(
   }
 
   if (optimized) {
-    TIME_DECL(mean_simd_optimized);
-    TIME_START(mean_simd_optimized);
     
     const float* input_data = in.const_data_ptr<float>();
     float* out_data = out.mutable_data_ptr<float>();
@@ -130,8 +128,6 @@ Tensor& mean_out(
         // Invalidate output cache: DMA wrote to system memory
         xthal_dcache_region_invalidate(out_data, sizeof(float) * out.numel());
         
-        TIME_END(mean_simd_optimized);
-        TIME_DISPLAY(mean_simd_optimized, total_channels, "channels (DMA)");
         return out;
       }
     }
@@ -144,14 +140,10 @@ Tensor& mean_out(
     simd_mean_pool_2x2_to_1x1_float32(out_data, input_data, total_channels * 4);
     xthal_dcache_region_writeback(out_data, sizeof(float) * out.numel());
 
-    TIME_END(mean_simd_optimized);
-    TIME_DISPLAY(mean_simd_optimized, total_channels, "channels (SIMD no-DMA)");
     return out;
   }
 
   // Fallback to portable implementation
-  TIME_DECL(mean_portable_fallback);
-  TIME_START(mean_portable_fallback);
   ET_SWITCH_REALHB_TYPES(in.scalar_type(), ctx, name, CTYPE_IN, [&] {
     ET_SWITCH_FLOATH_TYPES(out.scalar_type(), ctx, name, CTYPE_OUT, [&] {
       CTYPE_OUT* out_data = out.mutable_data_ptr<CTYPE_OUT>();
@@ -172,8 +164,6 @@ Tensor& mean_out(
     });
   });
 
-  TIME_END(mean_portable_fallback);
-  TIME_DISPLAY(mean_portable_fallback, out.numel(), "elements (portable)");
 
   return out;
 }

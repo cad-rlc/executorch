@@ -43,8 +43,6 @@ std::tuple<Tensor&, Tensor&> max_pool2d_with_indices_out(
     bool ceil_mode,
     Tensor& out,
     Tensor& indices) {
-  TIME_DECL(maxpool);
-  TIME_START(maxpool);
 
   std::tuple<Tensor&, Tensor&> ret_val(out, indices);
 
@@ -128,8 +126,6 @@ std::tuple<Tensor&, Tensor&> max_pool2d_with_indices_out(
       // Invalidate output cache: executor wrote to system memory
       xthal_dcache_region_invalidate(ptr_out, sizeof(float) * out.numel());
 
-      TIME_END(maxpool);
-      TIME_DISPLAY(maxpool, in.numel(), "floats");
       return ret_val;
     }
   }
@@ -160,8 +156,6 @@ std::tuple<Tensor&, Tensor&> max_pool2d_with_indices_out(
             {indices});
       });
 
-  TIME_END(maxpool);
-  TIME_DISPLAY(maxpool, in.numel(), "floats");
 
   return ret_val;
 }

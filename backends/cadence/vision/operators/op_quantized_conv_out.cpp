@@ -7,6 +7,7 @@
  */
 
 #include <lib.h>
+#include <stdio.h>
 #include <executorch/backends/cadence/generic/kernels/kernels.h>
 #include <executorch/backends/cadence/generic/operators/cadence_type_util.h>
 #include <executorch/runtime/core/exec_aten/util/scalar_type_util.h>
@@ -312,8 +313,6 @@ void quantized_conv_nchw(
     float output_scale,
     int32_t output_zero_point,
     Tensor& out) {
-  TIME_DECL(conv2d);
-  TIME_START(conv2d);
 
   bool conv1d = input.dim() == 3;
   // input = [n, c, h, w]
@@ -589,8 +588,6 @@ void quantized_conv_nchw(
 
 #undef typed_quantized_conv2d_nchw
 
-  TIME_END(conv2d);
-  TIME_DISPLAY(conv2d, input.numel(), "elements");
 }
 
 void quantized_conv_nhwc(
@@ -822,7 +819,6 @@ void quantized_conv2d_nhwc_per_tensor_out(
     int64_t output_zero_point,
     int64_t out_multiplier,
     int64_t out_shift,
-    ET_UNUSED const ::executorch::aten::optional<Tensor>& offset,
     Tensor& out) {
   quantized_conv_per_tensor_out(
       ctx,
@@ -919,121 +915,6 @@ void quantized_conv2d_nhwc_out(
 }
 
 void quantized_conv2d_nchw_asym8sxsym8s_asym8s_per_tensor_out(
-    __ET_UNUSED KernelRuntimeContext& ctx,
-    const Tensor& input,
-    const Tensor& weight,
-    const Tensor& bias,
-    IntArrayRef stride,
-    IntArrayRef padding,
-    IntArrayRef dilation,
-    int64_t groups,
-    int64_t in_zero_point,
-    int64_t weight_zero_point,
-    double bias_scale,
-    double output_scale,
-    int64_t output_zero_point,
-    __ET_UNUSED int64_t out_multiplier,
-    __ET_UNUSED int64_t out_shift,
-    Tensor& out) {
-  quantized_conv_nchw(
-      input, weight, bias, stride, padding, dilation, groups,
-      in_zero_point, weight_zero_point, bias_scale, output_scale,
-      output_zero_point, out);
-}
-
-void quantized_conv2d_nchw_asym8uxsym8u_asym8u_per_tensor_out(
-    __ET_UNUSED KernelRuntimeContext& ctx,
-    const Tensor& input,
-    const Tensor& weight,
-    const Tensor& bias,
-    IntArrayRef stride,
-    IntArrayRef padding,
-    IntArrayRef dilation,
-    int64_t groups,
-    int64_t in_zero_point,
-    int64_t weight_zero_point,
-    double bias_scale,
-    double output_scale,
-    int64_t output_zero_point,
-    __ET_UNUSED int64_t out_multiplier,
-    __ET_UNUSED int64_t out_shift,
-    Tensor& out) {
-  quantized_conv_nchw(
-      input, weight, bias, stride, padding, dilation, groups,
-      in_zero_point, weight_zero_point, bias_scale, output_scale,
-      output_zero_point, out);
-}
-
-void quantized_conv2d_nchw_dilated_asym8sxsym8s_asym8s_per_tensor_out(
-    __ET_UNUSED KernelRuntimeContext& ctx,
-    const Tensor& input,
-    const Tensor& weight,
-    const Tensor& bias,
-    IntArrayRef stride,
-    IntArrayRef padding,
-    IntArrayRef dilation,
-    int64_t groups,
-    int64_t in_zero_point,
-    int64_t weight_zero_point,
-    double bias_scale,
-    double output_scale,
-    int64_t output_zero_point,
-    __ET_UNUSED int64_t out_multiplier,
-    __ET_UNUSED int64_t out_shift,
-    Tensor& out) {
-  quantized_conv_nchw(
-      input, weight, bias, stride, padding, dilation, groups,
-      in_zero_point, weight_zero_point, bias_scale, output_scale,
-      output_zero_point, out);
-}
-
-void quantized_conv2d_nchw_dilated_asym8uxsym8u_asym8u_per_tensor_out(
-    __ET_UNUSED KernelRuntimeContext& ctx,
-    const Tensor& input,
-    const Tensor& weight,
-    const Tensor& bias,
-    IntArrayRef stride,
-    IntArrayRef padding,
-    IntArrayRef dilation,
-    int64_t groups,
-    int64_t in_zero_point,
-    int64_t weight_zero_point,
-    double bias_scale,
-    double output_scale,
-    int64_t output_zero_point,
-    __ET_UNUSED int64_t out_multiplier,
-    __ET_UNUSED int64_t out_shift,
-    Tensor& out) {
-  quantized_conv_nchw(
-      input, weight, bias, stride, padding, dilation, groups,
-      in_zero_point, weight_zero_point, bias_scale, output_scale,
-      output_zero_point, out);
-}
-
-void quantized_conv2d_nchw_depthwise_asym8sxsym8s_asym8s_per_tensor_out(
-    __ET_UNUSED KernelRuntimeContext& ctx,
-    const Tensor& input,
-    const Tensor& weight,
-    const Tensor& bias,
-    IntArrayRef stride,
-    IntArrayRef padding,
-    IntArrayRef dilation,
-    int64_t groups,
-    int64_t in_zero_point,
-    int64_t weight_zero_point,
-    double bias_scale,
-    double output_scale,
-    int64_t output_zero_point,
-    __ET_UNUSED int64_t out_multiplier,
-    __ET_UNUSED int64_t out_shift,
-    Tensor& out) {
-  quantized_conv_nchw(
-      input, weight, bias, stride, padding, dilation, groups,
-      in_zero_point, weight_zero_point, bias_scale, output_scale,
-      output_zero_point, out);
-}
-
-void quantized_conv2d_nchw_depthwise_asym8uxsym8u_asym8u_per_tensor_out(
     __ET_UNUSED KernelRuntimeContext& ctx,
     const Tensor& input,
     const Tensor& weight,

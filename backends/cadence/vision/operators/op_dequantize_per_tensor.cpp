@@ -41,11 +41,9 @@ Tensor& dequantize_per_tensor_out(
 
   if (input.scalar_type() == ScalarType::Byte) {
     const uint8_t* input_data = input.const_data_ptr<uint8_t>();
-    dequantize<uint8_t>(out_data, input_data, scale, zero_point, numel);
+    dequantize<uint8_t>(
+        out_data, input_data, scale, zero_point, numel);
   } else if (input.scalar_type() == ScalarType::Char) {
-    TIME_DECL(dequantize_asym8s);
-    TIME_START(dequantize_asym8s);
-    
     const int8_t* input_data = input.const_data_ptr<int8_t>();
     
     // Hardware-optimized int8 dequantization with DMA support
@@ -170,8 +168,6 @@ Tensor& dequantize_per_tensor_out(
         // Invalidate output cache: DMA wrote to system memory, cache may have stale data
         xthal_dcache_region_invalidate(out_data, FLT32_SIZE * numel);
         
-        TIME_END(dequantize_asym8s);
-        TIME_DISPLAY(dequantize_asym8s, numel, "elements (DMA ping-pong)");
       } 
       else if (ping_process_pong) {
         // Simple sequential processing
@@ -204,11 +200,8 @@ Tensor& dequantize_per_tensor_out(
         // Invalidate output cache: DMA wrote to system memory, cache may have stale data
         xthal_dcache_region_invalidate(out_data, FLT32_SIZE * numel);
         
-        TIME_END(dequantize_asym8s);
-        TIME_DISPLAY(dequantize_asym8s, numel, "elements (DMA ping-process-pong)");
       }
       
-      // TIME_END and TIME_DISPLAY now called inside each branch
     } else {
       // No DMA: use hardware function on full tensor at once
       // Writeback+invalidate input: ensures CPU-dirty data reaches system memory,
@@ -220,8 +213,6 @@ Tensor& dequantize_per_tensor_out(
       // Writeback output from cache to system memory for DMA coherency
       xthal_dcache_region_writeback(out_data, sizeof(float) * numel);
 
-      TIME_END(dequantize_asym8s);
-      TIME_DISPLAY(dequantize_asym8s, numel, "elements (HW-optimized, no DMA)");
     }
   } else if (
       input.scalar_type() == ScalarType::Bits16 ||

@@ -61,8 +61,6 @@ Tensor& add_out(
                        (numel >= 8) && ((numel % 2) == 0);
 
   if (use_optimized) {
-    TIME_DECL(add_float);
-    TIME_START(add_float);
 
     const float* a_data = a.const_data_ptr<float>();
     const float* b_data = b.const_data_ptr<float>();
@@ -215,8 +213,6 @@ Tensor& add_out(
         // Invalidate output cache: DMA wrote to system memory, cache may have stale data
         xthal_dcache_region_invalidate(out_data, FLT32_SIZE * numel);
         
-        TIME_END(add_float);
-        TIME_DISPLAY(add_float, numel, "elements (DMA ping-pong)");
       } 
       else if (ping_process_pong) {
         // Sequential processing
@@ -252,8 +248,6 @@ Tensor& add_out(
         // Invalidate output cache: DMA wrote to system memory, cache may have stale data
         xthal_dcache_region_invalidate(out_data, FLT32_SIZE * numel);
         
-        TIME_END(add_float);
-        TIME_DISPLAY(add_float, numel, "elements (DMA ping-process-pong)");
       }
     } else {
       // Fallback: use hardware-optimized vector addition directly without DMA
@@ -268,15 +262,11 @@ Tensor& add_out(
       // Writeback output from cache to system memory for DMA coherency
       xthal_dcache_region_writeback(out_data, FLT32_SIZE * numel);
 
-      TIME_END(add_float);
-      TIME_DISPLAY(add_float, numel, "elements (HW-optimized, no DMA)");
     }
   } else {
     // Fallback: Use full generic portable implementation
     // This handles: broadcasting, non-float dtypes, alpha!=1.0, small tensors, all corner cases
     
-    TIME_DECL(add_generic);
-    TIME_START(add_generic);
     
     namespace utils = torch::executor::native::utils;
     using torch::executor::check_alpha_type;
@@ -336,8 +326,6 @@ Tensor& add_out(
           out);
     });
     
-    TIME_END(add_generic);
-    TIME_DISPLAY(add_generic, numel, "elements (generic template)");
   }
   return out;
 }

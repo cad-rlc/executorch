@@ -1,21 +1,3 @@
-/*
- * conv_exec_1x1j2d1.c
- *
- *  Created on: Dec 8, 2025
- *      Author: Suraj Raut
- *
- *  Description:
- *      1x1 stride-2 convolution executor matching convIdma.c exactly.
- *      Projection layers for downsampling (e.g., 56x56x64 -> 28x28x128)
- *      
- *      Key DMA formulas for 1x1j2d1 (no edge padding):
- *      - Source offset: (stride_y * out_rows * idx) * src_dim1_size
- *      - Dest offset: 0 (IN_DATA_OFFSET = 0 for 1x1 kernels)
- *      - Rows: in_dim2_size (constant, no edge overlap)
- *      - DIM2_COORD: stride_y * out_dim2_size * idx_h
- *      - DIM2: in_rows_firstdma (no edge to subtract)
- */
-
 #include "kernel_executors.h"
 #include "memory_manager.h"
 #include "dma.h"

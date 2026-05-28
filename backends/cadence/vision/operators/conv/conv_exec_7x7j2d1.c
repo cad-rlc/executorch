@@ -1,24 +1,3 @@
-/*
- * conv_exec_7x7j2d1.c
- *
- *  Created on: Dec 8, 2025
- *      Author: Suraj Raut
- *
- *  Description:
- *      7x7 stride-2 convolution executor matching convIdma.c exactly.
- *      Layer 0: 224x224x3 -> 112x112x64
- *      
- *      Key DMA formulas for 7x7j2d1:
- *      - Source offset: max(((edge+1)*idx - edge) * src_dim1_size, 0)
- *      - Dest offset: data_offset - min((edge+1)*idx*in_dim1_pitch, data_offset - edge)
- *      - Rows: (idx < height_tiles-1) ? 
- *              min((edge+1)*idx + (in_dim2_size - edge), 
- *                  min(-(edge+1)*idx + src_dim1_size + edge2, in_dim2_size))
- *              : coeff_dim1_size (kernel height = 7)
- *      - DIM2_COORD: stride_y * out_dim2_size * idx_h
- *      - DIM2: in_rows_firstdma - edge (constant throughout loop)
- */
-
 #include "kernel_executors.h"
 #include "memory_manager.h"
 #include "dma.h"
@@ -667,7 +646,6 @@ XAI_ERR_TYPE conv_exec_7x7j2d1(
     
     // Wait for final output DMA to complete before returning
     idma_hw_wait_all(0);
-
     return XAI_ERR_OK;
 }
 
